@@ -13,6 +13,7 @@ from django.http import JsonResponse
 from django.conf import settings
 from django.utils import timezone
 import datetime
+from datetime import timedelta
 
 
 # without otp
@@ -28,7 +29,7 @@ import datetime
 @api_view(["POST"])
 def register_user(request):
     if request.method == "POST":
-        breakpoint()
+        # breakpoint()
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data["email"]
@@ -57,6 +58,7 @@ def register_user(request):
                     [email],
                     fail_silently=False,
                 )
+                # otp_record.expires_at = timezone.now() + timedelta(minutes=5) 
                 OTP.objects.create(email=email, otp=otp_value)
                 return Response(
                     {"message": "OTP sent successfully.", "instructions": otp_value},
@@ -71,15 +73,19 @@ def verify_otp(request):
         data = request.data
         email = data.get("email")
         otp_entered = data.get("otp")
-
+        print("data ,,,,,, +++++++++++ ", data)
+        print("email ,,,,,, +++++++++++ ", email)
+        print("otp_entered ,,,,,, +++++++++++ ", otp_entered)
         if not email or not otp_entered:
             return JsonResponse(
                 {"error": "Email address and OTP are required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
+        # breakpoint()
         try:
             otp_record = OTP.objects.get(email=email)
+            print("otp_record ,,,,,, +++++++++++ ", otp_record.otp)
+            print("otp_record ,,,,,, +++++++++++ ", otp_record.is_expired)
             if otp_record.otp == otp_entered and not otp_record.is_expired:
                 serializer = UserSerializer(data=data)
                 if serializer.is_valid():
@@ -105,7 +111,7 @@ def user_login(request):
     if request.method == "POST":
         email = request.data.get("email")
         password = request.data.get("password")
-        user = None
+        # user = None
 
         if email and password:
             try:
